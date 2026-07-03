@@ -228,12 +228,14 @@ def get_voice_messages(task_id: str, db: Session = Depends(database.get_db), cur
 @app.post("/instructions/voice")
 def upload_voice_instruction(recipient_username: str = Form(...), file: UploadFile = File(...), db: Session = Depends(database.get_db), current_username: str = Depends(get_current_user_token)):
     sender = db.query(User).filter(User.username == current_username).first()
-    if sender.role not in ["manager", "admin", "owner"]:
-        raise HTTPException(status_code=403, detail="Only managers, admins, and owners can send instructions")
-        
     recipient = db.query(User).filter(User.username == recipient_username).first()
     if not recipient:
         raise HTTPException(status_code=404, detail="Recipient not found")
+        
+    if sender.role not in ["manager", "admin", "owner"]:
+        # Employees can only send to managers
+        if recipient.role not in ["manager", "admin", "owner"]:
+            raise HTTPException(status_code=403, detail="Employees can only send messages to management")
         
     file_id = str(uuid.uuid4())
     file_ext = file.filename.split('.')[-1] if '.' in file.filename else 'm4a'

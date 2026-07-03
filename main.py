@@ -100,6 +100,20 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.get("/users")
+def get_users(db: Session = Depends(database.get_db), current_username: str = Depends(get_current_user_token)):
+    users = db.query(User).all()
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "name": u.name,
+            "role": u.role,
+            "avatar": u.avatar
+        }
+        for u in users
+    ]
+
 @app.get("/tasks")
 def get_all_tasks(username: str = None, db: Session = Depends(database.get_db), current_username: str = Depends(get_current_user_token)):
     """
